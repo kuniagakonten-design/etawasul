@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Faktur & Invoice Digital</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js CDN for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Custom Print Styling */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+            }
+            .print-area {
+                border: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+        }
+
+        /* Invoice PDF Export Container specific layout */
+        #invoicePaper {
+            width: 100%;
+            background: #ffffff;
+            color: #1E293B;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-12">
+
+    <!-- Header Navigation Bar -->
+    <header class="no-print bg-emerald-700 text-white shadow-md mb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight">Form Pembuatan Faktur</h1>
+                    <p class="text-emerald-100 text-xs hidden sm:block">Buat, cetak, dan unduh faktur penjualan PDF profesional</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="loadSampleData()" class="text-xs bg-emerald-800 hover:bg-emerald-900 text-emerald-100 px-3 py-2 rounded-lg transition font-medium border border-emerald-600/50 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Isi Contoh Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Form Input (6 Columns) -->
+            <div class="no-print lg:col-span-6 space-y-6">
+                
+                <!-- Card 1: Informasi Toko/Penjual (Permanen) -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        Informasi Penjual / Toko (Permanen)
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Toko / Perusahaan</label>
+                            <input type="text" id="sellerName" oninput="updateInvoice()" value="CV. Nutrilife Indonesia Sejahtra" readonly class="w-full bg-slate-100 border border-slate-300 text-slate-600 font-semibold cursor-not-allowed rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">No. HP / WhatsApp</label>
+                            <input type="text" id="sellerPhone" oninput="updateInvoice()" value="085148177661" readonly class="w-full bg-slate-100 border border-slate-300 text-slate-600 font-semibold cursor-not-allowed rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Penjual</label>
+                            <input type="text" id="sellerAddress" oninput="updateInvoice()" value="Jl. Raya Utama No. 123, Jakarta Selatan" readonly class="w-full bg-slate-100 border border-slate-300 text-slate-600 font-semibold cursor-not-allowed rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Informasi Pelanggan & Dokumen -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        Detail Pelanggan & Faktur
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Pelanggan *</label>
+                            <input type="text" id="clientName" oninput="updateInvoice()" placeholder="Contoh: Bpk. Ahmad" value="Budi Santoso" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">No. HP / WA Pelanggan</label>
+                            <input type="text" id="clientPhone" oninput="updateInvoice()" value="081234567890" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Pengiriman</label>
+                            <input type="text" id="clientAddress" oninput="updateInvoice()" value="Jl. Mawar Indah No. 45, Kebayoran Baru, Jakarta" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor Faktur</label>
+                            <input type="text" id="invoiceNo" oninput="updateInvoice()" value="INV-202610-001" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Faktur</label>
+                            <input type="date" id="invoiceDate" oninput="updateInvoice()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Status Pembayaran</label>
+                            <select id="paymentStatus" onchange="updateInvoice()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-medium">
+                                <option value="LUNAS">LUNAS (Paid)</option>
+                                <option value="BELUM LUNAS">BELUM LUNAS (Unpaid)</option>
+                                <option value="COD">COD (Bayar di Tempat)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Metode Pembayaran</label>
+                            <select id="paymentMethod" onchange="updateInvoice()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-medium">
+                                <option value="Transfer Bank BCA">Transfer Bank BCA</option>
+                                <option value="Transfer Bank Mandiri">Transfer Bank Mandiri</option>
+                                <option value="Transfer Bank BRI">Transfer Bank BRI</option>
+                                <option value="COD (Cash on Delivery)">COD (Cash on Delivery)</option>
+                                <option value="Tunai / Cash">Tunai / Cash</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Daftar Produk / Item Pemesanan -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                            Daftar Produk / Layanan
+                        </h2>
+                        <button type="button" onclick="addItemRow()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200 transition flex items-center gap-1">
+                            + Tambah Produk
+                        </button>
+                    </div>
+
+                    <div id="itemsContainer" class="space-y-3">
+                        <!-- Dynamic Item Rows will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Card 4: Biaya Tambahan & Catatan -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        Penyesuaian Biaya & Catatan
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Diskon (Rp)</label>
+                            <input type="number" id="discountAmount" oninput="updateInvoice()" value="0" min="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Biaya Layanan / COD (Rp)</label>
+                            <input type="number" id="shippingFee" oninput="updateInvoice()" value="8000" min="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Tambahan / Rekening Tujuan</label>
+                            <textarea id="invoiceNotes" oninput="updateInvoice()" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none">Transfer BCA: 1234567890 a.n CV. Nutrilife Indonesia Sejahtra. Terima kasih telah berbelanja bersama kami!</textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Live Invoice Document Preview & Actions (6 Columns) -->
+            <div class="lg:col-span-6 space-y-4 lg:sticky lg:top-6">
+                
+                <!-- Action Bar -->
+                <div class="no-print bg-slate-900 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                    <div class="text-xs">
+                        <p class="font-bold text-slate-200">Aksi Dokumen</p>
+                        <p class="text-slate-400">Siap dicetak atau diunduh</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Unduh PDF
+                        </button>
+                        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Printable Paper Preview -->
+                <div id="printPaperContainer" class="bg-white rounded-2xl border border-slate-300 shadow-xl overflow-hidden print-area">
+                    <div id="invoicePaper" class="p-6 sm:p-8 space-y-6">
+                        
+                        <!-- Invoice Header -->
+                        <div class="flex justify-between items-start border-b-2 border-emerald-600 pb-6">
+                            <div>
+                                <h2 id="prevSellerName" class="text-xl sm:text-2xl font-extrabold text-emerald-800 tracking-tight">CV. Nutrilife Indonesia Sejahtra</h2>
+                                <p id="prevSellerAddress" class="text-xs text-slate-500 mt-1 max-w-xs">Jl. Parang Centung, Kelurahan Patihan Wetan, Babadan, Ponorogo</p>
+                                <p id="prevSellerPhone" class="text-xs text-slate-500 font-medium">WA/Telp: 085148177661</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block text-xl sm:text-2xl font-black text-slate-800 tracking-wider">FAKTUR</span>
+                                <p id="prevInvoiceNo" class="text-xs font-mono font-bold text-emerald-700 mt-1">INV-202610-001</p>
+                                <p id="prevInvoiceDate" class="text-xs text-slate-500">Tanggal: 10 Okt 2026</p>
+                                <span id="prevPaymentStatusBadge" class="inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                                    LUNAS
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details & Metadata Grid -->
+                        <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Ditujukan Kepada:</span>
+                                <p id="prevClientName" class="font-bold text-slate-800 text-sm mt-0.5">Nama</p>
+                                <p id="prevClientPhone" class="text-slate-600">Nomor</p>
+                                <p id="prevClientAddress" class="text-slate-500 mt-1 leading-relaxed">Alamat</p>
+                            </div>
+                            <div class="text-right space-y-1">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Metode Pembayaran:</span>
+                                <p id="prevPaymentMethod" class="font-bold text-slate-800">Transfer Bank BCA</p>
+                            </div>
+                        </div>
+
+                        <!-- Products Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead>
+                                    <tr class="bg-emerald-800 text-white font-bold uppercase text-[10px] tracking-wider">
+                                        <th class="py-2.5 px-3 rounded-l-lg">No</th>
+                                        <th class="py-2.5 px-3">Produk / Deskripsi</th>
+                                        <th class="py-2.5 px-3 text-center">Qty</th>
+                                        <th class="py-2.5 px-3 text-right">Harga Satuan</th>
+                                        <th class="py-2.5 px-3 text-right rounded-r-lg">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prevItemsTable" class="divide-y divide-slate-100">
+                                    <!-- Dynamic Rows Rendered Here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Invoice Calculation Totals -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start pt-2 gap-4">
+                            <div class="w-full sm:w-1/2 text-xs space-y-1.5">
+                                <span class="font-bold text-slate-700 block">Catatan / Keterangan:</span>
+                                <p id="prevInvoiceNotes" class="text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed text-[11px] whitespace-pre-line">
+                                    Transfer BCA: 1234567890 a.n PT Etaboss Sejahtera.
+                                </p>
+                            </div>
+
+                            <div class="w-full sm:w-1/2 space-y-2 text-xs">
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Subtotal Produk:</span>
+                                    <span id="prevSubtotal" class="font-semibold text-slate-800">Rp 0</span>
+                                </div>
+                                <div id="prevDiscountRow" class="flex justify-between text-rose-600 hidden">
+                                    <span>Potongan Diskon:</span>
+                                    <span id="prevDiscount">-Rp 0</span>
+                                </div>
+                                <div id="prevShippingRow" class="flex justify-between text-slate-600">
+                                    <span>Biaya Layanan / Pengiriman:</span>
+                                    <span id="prevShippingFee">+Rp 0</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t-2 border-slate-200 pt-2 text-sm">
+                                    <span class="font-extrabold text-slate-800">Total Tagihan:</span>
+                                    <span id="prevGrandTotal" class="font-extrabold text-emerald-700 text-base">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Signatures & Footer -->
+                        <div class="pt-8 border-t border-slate-100 grid grid-cols-2 text-center text-xs text-slate-500">
+                            <div>
+                                <p class="mb-12">Penerima,</p>
+                                <p id="prevClientSignName" class="font-bold text-slate-800">( nama )</p>
+                            </div>
+                            <div>
+                                <p class="mb-12">Hormat Kami,</p>
+                                <p id="prevSellerSignName" class="font-bold text-slate-800">( CV. Nutrilife Indonesia Sejahtra )</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        
+        // Initial Sample Item List
+        let items = [
+            { name: "Susu Etaboss 200gr", qty: 2, price: 75000 },
+            { name: "Madu Hutan Murni 250ml", qty: 1, price: 50000 }
+        ];
+
+        // Format Currency Helper
+        function formatRupiah(number) {
+            return "Rp " + new Intl.NumberFormat("id-ID").format(number);
+        }
+
+        // Set Default Date to Today
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = today;
+        }
+
+        // Render input row item list in form
+        function renderFormItems() {
+            const container = document.getElementById('itemsContainer');
+            container.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200";
+                row.innerHTML = `
+                    <div class="flex-1">
+                        <input type="text" value="${item.name}" oninput="updateItem(${index}, 'name', this.value)" placeholder="Nama Barang" class="w-full bg-white border border-slate-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-emerald-600 focus:outline-none">
+                    </div>
+                    <div class="w-16">
+                        <input type="number" value="${item.qty}" min="1" oninput="updateItem(${index}, 'qty', this.value)" placeholder="Qty" class="w-full bg-white border border-slate-300 rounded-md px-2 py-1 text-xs text-center focus:ring-1 focus:ring-emerald-600 focus:outline-none">
+                    </div>
+                    <div class="w-28">
+                        <input type="number" value="${item.price}" min="0" oninput="updateItem(${index}, 'price', this.value)" placeholder="Harga" class="w-full bg-white border border-slate-300 rounded-md px-2 py-1 text-xs text-right focus:ring-1 focus:ring-emerald-600 focus:outline-none">
+                    </div>
+                    <button type="button" onclick="removeItemRow(${index})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Hapus Item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Add New Item Row
+        function addItemRow() {
+            items.push({ name: "", qty: 1, price: 0 });
+            renderFormItems();
+            updateInvoice();
+        }
+
+        // Remove Item Row
+        function removeItemRow(index) {
+            if (items.length <= 1) {
+                items = [{ name: "", qty: 1, price: 0 }];
+            } else {
+                items.splice(index, 1);
+            }
+            renderFormItems();
+            updateInvoice();
+        }
+
+        // Update Item Field
+        function updateItem(index, field, value) {
+            if (field === 'qty' || field === 'price') {
+                items[index][field] = parseFloat(value) || 0;
+            } else {
+                items[index][field] = value;
+            }
+            updateInvoice();
+        }
+
+        // Update Live Invoice Preview Card
+        function updateInvoice() {
+            // Seller info
+            document.getElementById('prevSellerName').innerText = document.getElementById('sellerName').value || "Nama Perusahaan";
+            document.getElementById('prevSellerAddress').innerText = document.getElementById('sellerAddress').value || "-";
+            document.getElementById('prevSellerPhone').innerText = "WA/Telp: " + (document.getElementById('sellerPhone').value || "-");
+            document.getElementById('prevSellerSignName').innerText = `( ${document.getElementById('sellerName').value || "Penjual"} )`;
+
+            // Client info
+            document.getElementById('prevClientName').innerText = document.getElementById('clientName').value || "Nama Pelanggan";
+            document.getElementById('prevClientPhone').innerText = document.getElementById('clientPhone').value || "-";
+            document.getElementById('prevClientAddress').innerText = document.getElementById('clientAddress').value || "-";
+            document.getElementById('prevClientSignName').innerText = `( ${document.getElementById('clientName').value || "Pelanggan"} )`;
+
+            // Invoice details
+            document.getElementById('prevInvoiceNo').innerText = document.getElementById('invoiceNo').value || "INV-000";
+            
+            const rawDate = document.getElementById('invoiceDate').value;
+            if (rawDate) {
+                const dateObj = new Date(rawDate);
+                const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                document.getElementById('prevInvoiceDate').innerText = "Tanggal: " + dateObj.toLocaleDateString('id-ID', options);
+            }
+
+            // Payment status badge
+            const status = document.getElementById('paymentStatus').value;
+            const badge = document.getElementById('prevPaymentStatusBadge');
+            badge.innerText = status;
+            if (status === 'LUNAS') {
+                badge.className = "inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase";
+            } else if (status === 'COD') {
+                badge.className = "inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase";
+            } else {
+                badge.className = "inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 uppercase";
+            }
+
+            document.getElementById('prevPaymentMethod').innerText = document.getElementById('paymentMethod').value;
+            document.getElementById('prevInvoiceNotes').innerText = document.getElementById('invoiceNotes').value || "-";
+
+            // Render Preview Items Table & Calculations
+            const prevTable = document.getElementById('prevItemsTable');
+            prevTable.innerHTML = '';
+
+            let subtotal = 0;
+
+            items.forEach((item, idx) => {
+                const itemTotal = (item.qty || 0) * (item.price || 0);
+                subtotal += itemTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="py-2 px-3 text-slate-400 font-mono">${idx + 1}</td>
+                    <td class="py-2 px-3 font-medium text-slate-800">${item.name || "Nama Barang"}</td>
+                    <td class="py-2 px-3 text-center">${item.qty || 0}</td>
+                    <td class="py-2 px-3 text-right text-slate-600">${formatRupiah(item.price || 0)}</td>
+                    <td class="py-2 px-3 text-right font-bold text-slate-800">${formatRupiah(itemTotal)}</td>
+                `;
+                prevTable.appendChild(tr);
+            });
+
+            // Adjust totals
+            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const shipping = parseFloat(document.getElementById('shippingFee').value) || 0;
+            const grandTotal = Math.max(0, subtotal - discount + shipping);
+
+            document.getElementById('prevSubtotal').innerText = formatRupiah(subtotal);
+
+            // Discount Row
+            const prevDiscountRow = document.getElementById('prevDiscountRow');
+            if (discount > 0) {
+                prevDiscountRow.classList.remove('hidden');
+                document.getElementById('prevDiscount').innerText = "-" + formatRupiah(discount);
+            } else {
+                prevDiscountRow.classList.add('hidden');
+            }
+
+            document.getElementById('prevShippingFee').innerText = "+" + formatRupiah(shipping);
+            document.getElementById('prevGrandTotal').innerText = formatRupiah(grandTotal);
+        }
+
+        // Fill Sample Data function
+        function loadSampleData() {
+            document.getElementById('sellerName').value = "CV. Nutrilife Indonesia Sejahtra";
+            document.getElementById('sellerPhone').value = "085148177661";
+            document.getElementById('sellerAddress').value = "Jl. Raya Utama No. 123, Jakarta Selatan";
+            
+            document.getElementById('clientName').value = "Siti Rahmawati";
+            document.getElementById('clientPhone').value = "081987654321";
+            document.getElementById('clientAddress').value = "Jl. Sudirman No. 88, Surabaya, Jawa Timur";
+            
+            document.getElementById('invoiceNo').value = "INV-" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('paymentStatus').value = "LUNAS";
+            document.getElementById('paymentMethod').value = "Transfer Bank BCA";
+            
+            items = [
+                { name: "Susu Etaboss 200gr (Paket 3 Box)", qty: 2, price: 200000 },
+                { name: "Madu Hutan Klanceng 500ml", qty: 1, price: 120000 }
+            ];
+
+            document.getElementById('discountAmount').value = 10000;
+            document.getElementById('shippingFee').value = 8000;
+            document.getElementById('invoiceNotes').value = "Pembayaran via Transfer BCA Rek: 1234567890 a.n CV. Nutrilife Indonesia Sejahtra. Barang telah diperiksa sebelum dikirim.";
+
+            renderFormItems();
+            updateInvoice();
+        }
+
+        // Download Invoice as PDF using html2pdf.js
+        function downloadPDF() {
+            const element = document.getElementById('invoicePaper');
+            const clientName = document.getElementById('clientName').value || 'Pelanggan';
+            const invoiceNo = document.getElementById('invoiceNo').value || 'Faktur';
+
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     `${invoiceNo}_${clientName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // On DOM Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDate();
+            renderFormItems();
+            updateInvoice();
+        });
+    </script>
+</body>
+</html>
